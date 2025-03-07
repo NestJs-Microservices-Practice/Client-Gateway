@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { NatsModule, TcpOrdersModule, TcpProductsModule } from './transports';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { NatsModule, TcpOrdersModule, TcpProductsModule } from './transports';
     NatsModule,
     TcpOrdersModule,
     TcpProductsModule,
+    AuthModule,
   ],
   controllers: [],
   providers: [],
