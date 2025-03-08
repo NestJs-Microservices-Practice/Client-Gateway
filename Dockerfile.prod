@@ -1,0 +1,44 @@
+# Dependencias
+FROM node:21-alpine3.19 as deps
+
+WORKDIR /usr/src/app
+
+COPY package.json ./
+COPY pnpm-lock.yaml ./
+
+RUN npm install -g pnpm
+
+RUN pnpm install
+
+
+# Builder - Contruye la aplicación
+FROM node:21-alpine3.19 as build
+
+WORKDIR /usr/src/app
+
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+
+# Copiar todo el código fuente
+COPY . .
+# Construir la aplicación
+RUN npm install -g pnpm
+RUN pnpm build
+
+RUN pnpm install --prod && pnpm cache clean
+
+# Crear la imagen final de docker
+FROM node:21-alpine3.19 as prod
+
+WORKDIR /usr/src/app
+
+# Copiar los archivos necesarios [dist, node_modules]
+COPY --from=build /usr/src/app/dist ./dist
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+
+USER node
+
+EXPOSE 3000
+
+CMD ["node", "dist/main.js"]
+
+
