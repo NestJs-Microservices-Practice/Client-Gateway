@@ -3,35 +3,38 @@ FROM node:21-alpine3.19 as deps
 
 WORKDIR /usr/src/app
 
+# Copiar el archivo package.json
 COPY package.json ./
-COPY pnpm-lock.yaml ./
 
-RUN npm install -g pnpm
+# Instalar las dependencias con npm
+RUN npm install --production --omit=dev
 
-RUN pnpm install
-
-
-# Builder - Contruye la aplicación
+# Builder - Construye la aplicación
 FROM node:21-alpine3.19 as build
 
 WORKDIR /usr/src/app
 
+# Copiar las dependencias desde la fase deps
 COPY --from=deps /usr/src/app/node_modules ./node_modules
 
 # Copiar todo el código fuente
 COPY . .
+
+# Instalar las dependencias de desarrollo y de producción
+RUN npm install
+
 # Construir la aplicación
-RUN npm install -g pnpm
-RUN pnpm build
+RUN npm run build
 
-RUN pnpm install --prod && pnpm cache clean
+# Limpiar la caché de npm
+RUN npm cache clean --force
 
-# Crear la imagen final de docker
+# Crear la imagen final de producción
 FROM node:21-alpine3.19 as prod
 
 WORKDIR /usr/src/app
 
-# Copiar los archivos necesarios [dist, node_modules]
+# Copiar los archivos necesarios (dist, node_modules)
 COPY --from=build /usr/src/app/dist ./dist
 COPY --from=deps /usr/src/app/node_modules ./node_modules
 
@@ -40,5 +43,3 @@ USER node
 EXPOSE 3000
 
 CMD ["node", "dist/main.js"]
-
-
